@@ -15,18 +15,25 @@ describe Contact do
     expect(contact.errors[:firstname]).to include("can't be blank")
   end
 
-  it "is invalid without a lasttname" do
+  it "is invalid without a lastname" do
     contact = Contact.new(lastname: nil)
     contact.valid?
     expect(contact.errors[:lastname]).to include("can't be blank")
   end
+
   it "is invalid without an email address" do
+    contact = Contact.new(email: nil)
+    contact.valid?
+    expect(contact.errors[:email]).to include("can't be blank")
+  end
+
+  it "is invalid with a duplicate email address" do
     Contact.create(
       firstname: 'Joe', lastname: 'Tester',
       email: 'tester@example.com'
     )
-    contact = Contact.create(
-      firstname: 'Jone', lastname: 'Tester',
+    contact = Contact.new(
+      firstname: 'Jane', lastname: 'Tester',
       email: 'tester@example.com'
     )
     contact.valid?
@@ -42,45 +49,35 @@ describe Contact do
     expect(contact.name).to eq 'John Doe'
   end
 
-  it "returns a sorted array of results that match" do
-    smith = Contact.create(
-      firstname: 'John',
-      lastname: 'Smith',
-      email: 'jsmith@example.com'
-    )
-    jones = Contact.create(
-      firstname: 'Time',
-      lastname: 'Jones',
-      email: 'tjones@example.com'
-    )
+  describe "filter last name by letter" do
+    before :each do
+      @smith = Contact.create(
+        firstname: 'John',
+        lastname: 'Smith',
+        email: 'jsmith@example.com'
+      )
+      @jones = Contact.create(
+        firstname: 'Tim',
+        lastname: 'Jones',
+        email: 'tjones@example.com'
+      )
+      @johnson = Contact.create(
+        firstname: 'John',
+        lastname: 'Johnson',
+        email: 'jjohnson@example.com'
+      )
+    end
 
-    johnson = Contact.create(
-      firstname: 'John',
-      lastname: 'Johnson',
-      email: 'jjohnson@example.com'
-    )
-    expect(Contact.by_letter("J")).to eq [johnson, jones]
+    context "with matching letters" do
+      it "returns a sorted array of results that match" do
+        expect(Contact.by_letter("J")).to eq [@johnson, @jones]
+      end
+    end
+
+    context "with non-matching letters" do
+      it "omits results that do not match" do
+        expect(Contact.by_letter("J")).not_to include @smith
+      end
+    end
   end
-
-  it "omits results that do not match" do
-    smith = Contact.create(
-      firstname: 'John',
-      lastname: 'Smith',
-      email: 'jsmith@example.com'
-    )
-    jones = Contact.create(
-      firstname: 'Time',
-      lastname: 'Jones',
-      email: 'tjones@example.com'
-    )
-    johnson = Contact.create(
-      firstname: 'John',
-      lastname: 'Johnson',
-      email: 'jjohnson@example.com'
-    )
-    expect(Contact.by_letter("J")).not_to include smith
-  end
-
-  it "is invalid with a duplicate email address"
-  it "is returns a contact's full name as a string"
 end
