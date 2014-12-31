@@ -1,7 +1,6 @@
 require 'rails_helper'
 
 describe ContactsController do
-
   describe 'GET #index' do
     context 'with params[:letter]' do
       it "populates an array of contacts starting with the letter" do
@@ -24,13 +23,13 @@ describe ContactsController do
         get :index
         expect(assigns(:contacts)).to match_array([smith, jones])
       end
-    end
 
       it "renders the :index template" do
         get :index
         expect(response).to render_template :index
       end
     end
+  end
 
   describe 'GET #show' do
     it "assigns the requested contact to @contact" do
@@ -72,7 +71,7 @@ describe ContactsController do
     end
   end
 
-  describe 'GET #edit' do
+  describe 'GET #create' do
     before :each do
       @phones = [
         attributes_for(:phone),
@@ -94,6 +93,85 @@ describe ContactsController do
           phones_attributes: @phones)
         expect(response).to redirect_to contact_path(assigns[:contact])
       end
+    end
+
+    context "with invalid attributes" do
+      it "does not save the new contact in the database" do
+        expect{
+          post :create,
+            contact: attributes_for(:invalid_contact)
+        }.not_to change(Contact, :count)
+      end
+
+      it "re-renders the :new template" do
+        post :create,
+          contact: attributes_for(:invalid_contact)
+        expect(response).to render_template :new
+      end
+    end
+  end
+
+  describe 'GET #update' do
+    before :each do
+      @contact = create(:contact,
+        firstname: 'Lawrence',
+        lastname: 'Smith')
+    end
+
+    context "valid attributes" do
+      it "locates the requested @contact" do
+        patch :update, id: @contact, contact: attributes_for(:contact)
+        expect(assigns(:contact)).to eq(@contact)
+      end
+
+      it "changes @contact's attributes" do
+        patch :update, id: @contact,
+          contact: attributes_for(:contact,
+            firstname: 'Larry',
+            lastname: 'Smith')
+        @contact.reload
+        expect(@contact.firstname).to eq('Larry')
+        expect(@contact.lastname).to eq('Smith')
+      end
+
+      it "redirects to the updated contact" do
+        patch :update, id: @contact, contact: attributes_for(:contact)
+        expect(response).to redirect_to @contact
+      end
+    end
+
+    context "with invalid attributes" do
+      it "does not change the contact's attributes" do
+        patch :update, id: @contact,
+          contact: attributes_for(:contact,
+            firstname: "Larry", lastname: nil)
+        @contact.reload
+        expect(@contact.firstname).not_to eq("Larry")
+        expect(@contact.lastname).to eq("Smith")
+      end
+
+      it "re-renders the :edit template" do
+        patch :update, id: @contact,
+          contact: attributes_for(:invalid_contact)
+        expect(response).to render_template :edit
+      end
+    end
+  end
+
+  describe 'DELETE #destroy' do
+    before :each do
+      @contact = create(:contact)
+    end
+
+    it "deletes the contact" do
+      expect{
+        delete :destroy, id: @contact
+      }.to change(Contact, :count).by(-1)
+    end
+
+    it "redirects to contacts#index" do
+      delete :destroy, id: @contact
+      expect(response).to redirect_to contacts_url
     end
   end
 end
